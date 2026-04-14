@@ -1,0 +1,36 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Sensitive files
+*.pem
+*.ppk
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node (if ever used)
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+
+# Kubernetes (optional temp files)
+*.yaml.tmp
+
+# Docker
+docker-compose.override.yml
+
+# Jenkins (if any local config files)
+.jenkins/
+
+# Misc
+.env
