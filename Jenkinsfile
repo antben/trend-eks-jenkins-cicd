@@ -54,26 +54,20 @@ pipeline {
         }
 
         stage('Deploy to EKS') {
-            steps {
-                sh '''
-                    echo "Updating kubeconfig..."
-                    aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
-
-                    echo "Deploying to Kubernetes..."
-                    kubectl apply -f kubernetes/deployment.yaml
-                    kubectl apply -f kubernetes/service.yaml
-
-                    echo "Checking rollout status..."
-                    kubectl rollout status deployment/trend-app-deployment
-
-                    echo "Listing resources..."
-                    kubectl get nodes
-                    kubectl get pods
-                    kubectl get svc
-                '''
-            }
-        }
+    steps {
+        sh '''
+            mkdir -p ~/.kube
+            aws eks update-kubeconfig --region ap-south-1 --name trend-eks-cluster
+            kubectl get nodes
+            kubectl apply -f kubernetes/deployment.yaml
+            kubectl apply -f kubernetes/service.yaml
+            kubectl rollout status deployment/trend-app-deployment
+            kubectl get pods
+            kubectl get svc
+        '''
     }
+   }
+ }
 
     post {
         success {
