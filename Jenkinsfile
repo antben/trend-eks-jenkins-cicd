@@ -8,16 +8,53 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Clean Workspace') {
             steps {
-                git branch: 'main', url: 'https://github.com/Vennilavanguvi/Trend.git'
+                deleteDir()
             }
         }
 
-        stage('Verify Tools') {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/antben/trend-eks-jenkins-cicd.git'
+            }
+        }
+
+        stage('Debug Workspace') {
             steps {
                 sh '''
-                    echo "Checking installed tools..."
+                    echo "===== WHOAMI ====="
+                    whoami
+
+                    echo "===== ID ====="
+                    id
+
+                    echo "===== PWD ====="
+                    pwd
+
+                    echo "===== FILES IN ROOT ====="
+                    ls -la
+
+                    echo "===== ALL FILES ====="
+                    find . -maxdepth 3 -type f | sort
+
+                    echo "===== DOCKERFILE DETAILS ====="
+                    ls -l Dockerfile || true
+                    file Dockerfile || true
+
+                    echo "===== DOCKERFILE CONTENT ====="
+                    cat Dockerfile || true
+
+                    echo "===== NGINX CONF CONTENT ====="
+                    cat nginx.conf || true
+
+                    echo "===== GIT REMOTE ====="
+                    git remote -v || true
+
+                    echo "===== GIT BRANCH ====="
+                    git branch || true
+
+                    echo "===== TOOL VERSIONS ====="
                     git --version
                     docker --version
                     aws --version
@@ -54,27 +91,36 @@ pipeline {
         }
 
         stage('Deploy to EKS') {
-    steps {
-        sh '''
-            mkdir -p ~/.kube
-            aws eks update-kubeconfig --region ap-south-1 --name trend-eks-cluster
-            kubectl get nodes
-            kubectl apply -f kubernetes/deployment.yaml
-            kubectl apply -f kubernetes/service.yaml
-            kubectl rollout status deployment/trend-app-deployment
-            kubectl get pods
-            kubectl get svc
-        '''
+            steps {
+                sh '''
+                    echo "Updating kubeconfig..."
+                    mkdir -p ~/.kube
+                    aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+                    echo "Checking cluster access..."
+                    kubectl get nodes
+
+                    echo "Deploying manifests..."
+                    kubectl apply -f kubernetes/deployment.yaml
+                    kubectl apply -f kubernetes/service.yaml
+
+                    echo "Waiting for rollout..."
+                    kubectl rollout status deployment/trend-app-deployment
+
+                    echo "Listing deployment resources..."
+                    kubectl get pods
+                    kubectl get svc
+                '''
+            }
+        }
     }
-   }
- }
 
     post {
         success {
             echo 'Pipeline completed successfully: build, push, and deployment done.'
         }
         failure {
-            echo 'Pipeline failed. Check the console output for details.'
+            echo 'Pipeline failed. Check the debug workspace stage and console output for details.'
         }
     }
 }
